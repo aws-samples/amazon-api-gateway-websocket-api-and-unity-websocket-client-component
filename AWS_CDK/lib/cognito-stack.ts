@@ -32,8 +32,7 @@ export class CognitoStack extends cdk.NestedStack {
                 requireLowercase: true,
                 requireSymbols: true,
                 requireUppercase: true
-            },
-            advancedSecurityMode: cognito.AdvancedSecurityMode.ENFORCED
+            }
         });
         this.UserPoolId = this.UserPool.userPoolId;
         this.AppClient = this.UserPool.addClient('unity-client', {
@@ -63,6 +62,10 @@ export class CognitoStack extends cdk.NestedStack {
             {
                 id: 'AwsSolutions-COG2',
                 reason: 'MFA should be added in a production environment.'
+            },
+            {
+                id: 'AwsSolutions-COG3',
+                reason: 'AdvancedSecurityMode is deprecated.'
             }
         ]);
 

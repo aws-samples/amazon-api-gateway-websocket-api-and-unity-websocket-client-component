@@ -36,7 +36,7 @@ export class ConfigStack extends cdk.NestedStack {
       serverAccessLogsBucket: accessLogsBucket
     });
     const configFunction = new lambda.Function(this, 'config-lambda', {
-      runtime: lambda.Runtime.NODEJS_18_X,
+      runtime: lambda.Runtime.NODEJS_22_X,
       handler: 'configFile.handler',
       code: lambda.Code.fromAsset('lib/lambdas/ConfigFile'),
       timeout: Duration.seconds(30),
@@ -101,6 +101,18 @@ export class ConfigStack extends cdk.NestedStack {
             },
           ],
         },
+      ],
+      true
+    );
+
+    // Add suppression for the Custom Resource Provider's Lambda function
+    NagSuppressions.addResourceSuppressions(
+      crProvider,
+      [
+        {
+          id: "AwsSolutions-L1",
+          reason: "The Custom Resource Provider uses an internal Lambda function with a runtime that cannot be directly controlled."
+        }
       ],
       true
     );

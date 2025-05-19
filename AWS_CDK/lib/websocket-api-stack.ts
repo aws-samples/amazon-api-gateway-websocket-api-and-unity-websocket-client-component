@@ -7,9 +7,8 @@ import * as cdk from 'aws-cdk-lib';
 import { Duration } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as apigatewayv2 from 'aws-cdk-lib/aws-apigatewayv2'
-import * as apigatewayv2alpha from '@aws-cdk/aws-apigatewayv2-alpha'
-import { WebSocketLambdaIntegration } from '@aws-cdk/aws-apigatewayv2-integrations-alpha'
-import { WebSocketLambdaAuthorizer } from '@aws-cdk/aws-apigatewayv2-authorizers-alpha'
+import { WebSocketLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations'
+import { WebSocketLambdaAuthorizer } from 'aws-cdk-lib/aws-apigatewayv2-authorizers'
 import * as lambda from 'aws-cdk-lib/aws-lambda'
 import * as ddb from 'aws-cdk-lib/aws-dynamodb'
 import * as logs from 'aws-cdk-lib/aws-logs';
@@ -23,7 +22,7 @@ interface WebSocketApiStackProps extends cdk.NestedStackProps {
 
 export class WebSocketApiStack extends cdk.NestedStack {
     public AWS_Region: string;
-    public WebSocketApi: apigatewayv2alpha.WebSocketApi
+    public WebSocketApi: apigatewayv2.WebSocketApi
     StageName: string;
 
     constructor(scope: Construct, id: string, props: WebSocketApiStackProps) {
@@ -39,13 +38,12 @@ export class WebSocketApiStack extends cdk.NestedStack {
                 type: ddb.AttributeType.STRING
             },
             removalPolicy: cdk.RemovalPolicy.DESTROY,
-            timeToLiveAttribute: "expiryTime",
-            pointInTimeRecovery: false
+            timeToLiveAttribute: "expiryTime"
         });
 
         // $connect route for WebSocket API 
         const connectLambda = new lambda.Function(this, 'ws-connect-lambda', {
-            runtime: lambda.Runtime.NODEJS_18_X,
+            runtime: lambda.Runtime.NODEJS_22_X,
             handler: 'connect.handler',
             code: lambda.Code.fromAsset('lib/lambdas/WebSocketConnect'),
             timeout: Duration.seconds(30),
@@ -57,7 +55,7 @@ export class WebSocketApiStack extends cdk.NestedStack {
 
         // $disconnect route for WebSocket API 
         const disconnectLambda = new lambda.Function(this, 'ws-disconnect-lambda', {
-            runtime: lambda.Runtime.NODEJS_18_X,
+            runtime: lambda.Runtime.NODEJS_22_X,
             handler: 'disconnect.handler',
             code: lambda.Code.fromAsset('lib/lambdas/WebSocketDisconnect'),
             timeout: Duration.seconds(30),
@@ -69,7 +67,7 @@ export class WebSocketApiStack extends cdk.NestedStack {
 
         // message route for WebSocket API 
         const messageLambda = new lambda.Function(this, 'ws-message-lambda', {
-            runtime: lambda.Runtime.NODEJS_18_X,
+            runtime: lambda.Runtime.NODEJS_22_X,
             handler: 'message.handler',
             code: lambda.Code.fromAsset('lib/lambdas/WebSocketMessage'),
             timeout: Duration.seconds(30),
@@ -80,7 +78,7 @@ export class WebSocketApiStack extends cdk.NestedStack {
         connectionsTable.grantReadData(messageLambda);
 
         const heartbeatLambda = new lambda.Function(this, 'ws-heartbeat-lambda', {
-            runtime: lambda.Runtime.NODEJS_18_X,
+            runtime: lambda.Runtime.NODEJS_22_X,
             handler: 'heartbeat.handler',
             code: lambda.Code.fromAsset('lib/lambdas/WebSocketHeartbeat'),
             timeout: Duration.seconds(30)
@@ -88,7 +86,7 @@ export class WebSocketApiStack extends cdk.NestedStack {
 
         // WebSocket API Authorizer Lambda
         const authLambda = new lambda.Function(this, 'ws-authorizer-lambda', {
-            runtime: lambda.Runtime.NODEJS_18_X,
+            runtime: lambda.Runtime.NODEJS_22_X,
             handler: 'authWebSocket.handler',
             code: lambda.Code.fromAsset('lib/lambdas/WebSocketAuth'),
             timeout: Duration.seconds(30)
@@ -96,7 +94,7 @@ export class WebSocketApiStack extends cdk.NestedStack {
 
         // WebSocket API
 
-        const webSocketApi = new apigatewayv2alpha.WebSocketApi(this, 'websocket-api-demo', {
+        const webSocketApi = new apigatewayv2.WebSocketApi(this, 'websocket-api-demo', {
             apiName: 'websocket-api',
             connectRouteOptions: {
                 integration: new WebSocketLambdaIntegration('ConnectIntegration', connectLambda),

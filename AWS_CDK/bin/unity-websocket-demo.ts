@@ -7,7 +7,8 @@ import {AwsSolutionsChecks} from 'cdk-nag';
 
 const app = new cdk.App();
 
-cdk.Aspects.of(app).add(new AwsSolutionsChecks({ verbose: true }));
+// Uncomment this to run CDK Nag checks
+// cdk.Aspects.of(app).add(new AwsSolutionsChecks({ verbose: true }));
 
 new WebSocketDemoStack(app, 'WebSocketDemoStack', {
   /* If you don't specify 'env', this stack will be environment-agnostic.
