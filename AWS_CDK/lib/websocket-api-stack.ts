@@ -75,7 +75,7 @@ export class WebSocketApiStack extends cdk.NestedStack {
                 "CONNECTIONS_TABLE": connectionsTable.tableName
             }
         });
-        connectionsTable.grantReadData(messageLambda);
+        connectionsTable.grantReadWriteData(messageLambda);
 
         const heartbeatLambda = new lambda.Function(this, 'ws-heartbeat-lambda', {
             runtime: lambda.Runtime.NODEJS_22_X,

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT-0
  */
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, ScanCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, ScanCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 
 import { ApiGatewayManagementApiClient, PostToConnectionCommand } from "@aws-sdk/client-apigatewaymanagementapi";
 
@@ -33,6 +33,22 @@ async function getConnections() {
     }
 }
 
+async function deleteConnection(connectionId) {
+    const params = {
+        TableName: connectionsTableName,
+        Key: {
+            connectionId: connectionId
+        }
+    };
+
+    try {
+        await dynamo.send(new DeleteCommand(params));
+        console.log(`Removed stale connection: ${connectionId}`);
+    } catch (err) {
+        console.error(`Error removing stale connection ${connectionId}:`, err);
+    }
+}
+
 async function postToConnection(data, connectionId, apiClient) {
     if (typeof data !== "string") {
         data = JSON.stringify(data);
@@ -44,8 +60,19 @@ async function postToConnection(data, connectionId, apiClient) {
         };
 
         const response = await apiClient.send(new PostToConnectionCommand(input));
+        return true; // Success
 
     } catch (err) {
+        // Check if the error is due to a stale/invalid connection
+        if (err.statusCode === 410 || 
+            err.name === 'GoneException' || 
+            err.name === 'BadRequestException' ||
+            (err.message && err.message.includes('Invalid connectionId'))) {
+            console.log(`Connection ${connectionId} is invalid/stale, removing from database. Error: ${err.message}`);
+            await deleteConnection(connectionId);
+            return false; // Connection was stale/invalid
+        }
+        // Re-throw other errors
         throw err;
     }
 }
@@ -73,9 +100,19 @@ export const handler = async (event, context) => {
         });
 
         // Post message to recipients
+        let successCount = 0;
+        let staleCount = 0;
+        
         for (const recipient of recipients) {
-            await postToConnection(body.message, recipient, apiClient);
+            const success = await postToConnection(body.message, recipient, apiClient);
+            if (success) {
+                successCount++;
+            } else {
+                staleCount++;
+            }
         }
+        
+        console.log(`Message sent to ${successCount} recipients, ${staleCount} stale connections removed`);
 
     } catch (err) {
         console.error("Error sending message: " + err);
